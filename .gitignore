@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Datos reales y respaldos
+dataset/*.csv
+!dataset/ejemplo_lecturas.csv
+!dataset/README.md
+
+# Modelos y reportes generados
+modelos/*.joblib
+reportes/*.png
+reportes/*.md
+
+# Salidas pesadas o entregables generados
+outputs/
+
+# Archivos locales sensibles
+firmware_esp32_ia/config_local.h
+*.env
+.env*
+
+# Construcciones temporales
+.build/
+_archivo_no_usar_*/
+
+# Sistema/editor
+.DS_Store
+Thumbs.db
+.vscode/

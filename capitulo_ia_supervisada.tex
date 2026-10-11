@@ -1,0 +1,60 @@
+\section{Integraci\'on de inteligencia artificial supervisada}
+
+La fase de inteligencia artificial de Atalaya se implement\'o bajo un enfoque de clasificaci\'on supervisada. En lugar de utilizar inicialmente un detector de anomal\'ias no supervisado, el sistema recolecta lecturas reales del nodo ESP32 y las etiqueta manualmente como estado normal o an\'omalo. Esta decisi\'on permite evaluar el desempe\~no mediante m\'etricas objetivas como exactitud, precisi\'on, \textit{recall}, F1 y matriz de confusi\'on.
+
+\subsection{Arquitectura de adquisici\'on de datos}
+
+El nodo ESP32 realiza lecturas peri\'odicas de temperatura, humedad, movimiento y luz. Cada lectura se env\'ia mediante WiFi a un servidor local escrito en Python, ejecutado en el computador del autor. El servidor recibe las lecturas mediante peticiones HTTP POST y las almacena en un archivo CSV.
+
+\begin{equation}
+X(t) = [T(t), H(t), P(t), L(t)]
+\end{equation}
+
+donde $T(t)$ representa la temperatura, $H(t)$ la humedad, $P(t)$ el estado del sensor PIR y $L(t)$ la lectura del sensor de luz. A cada vector de entrada se le asigna una etiqueta:
+
+\begin{equation}
+y =
+\begin{cases}
+0, & \text{condici\'on normal} \\
+1, & \text{condici\'on an\'omala}
+\end{cases}
+\end{equation}
+
+\subsection{Estrategia de etiquetado}
+
+Para evitar el etiquetado manual fila por fila, se utiliza etiquetado por sesi\'on. Durante una sesi\'on normal, el nodo se deja operando sin perturbaciones y todas las lecturas se etiquetan como $0$. En sesiones an\'omalas se provoca deliberadamente una alteraci\'on: aumento de temperatura, movimiento frente al PIR o cambio extremo en la luz recibida por el LDR. Todas las lecturas de esas sesiones se etiquetan como $1$.
+
+El conjunto de datos generado contiene las columnas:
+
+\begin{verbatim}
+timestamp, sesion, etiqueta, temp_c, humedad_pct,
+pir, luz, estado_local, prediccion, cliente_ip
+\end{verbatim}
+
+\subsection{Modelos evaluados}
+
+Se entrenaron tres modelos de clasificaci\'on iniciales: regresi\'on log\'istica, \'arbol de decisi\'on y una red neuronal peque\~na tipo MLP. La regresi\'on log\'istica se incluye como l\'inea base interpretable, el \'arbol de decisi\'on permite extraer reglas comprensibles para despliegue posterior en firmware, y la red neuronal responde a la recomendaci\'on de evaluar una arquitectura de aprendizaje supervisado no lineal.
+
+La funci\'on aprendida por el clasificador se expresa como:
+
+\begin{equation}
+f(X) \rightarrow \{0,1\}
+\end{equation}
+
+donde $f(X)=0$ indica estado normal y $f(X)=1$ indica estado an\'omalo.
+
+\subsection{Validaci\'on}
+
+El conjunto de datos se divide en entrenamiento y prueba usando partici\'on estratificada para conservar la proporci\'on entre clases normales y an\'omalas. El desempe\~no se reporta mediante:
+
+\begin{itemize}
+  \item Exactitud: proporci\'on total de predicciones correctas.
+  \item Precisi\'on: proporci\'on de alertas predichas que realmente fueron an\'omalas.
+  \item \textit{Recall}: proporci\'on de anomal\'ias reales detectadas por el modelo.
+  \item F1: media arm\'onica entre precisi\'on y \textit{recall}.
+  \item Matriz de confusi\'on: conteo de verdaderos positivos, falsos positivos, verdaderos negativos y falsos negativos.
+\end{itemize}
+
+\subsection{Despliegue inicial}
+
+En la primera versi\'on, la inferencia del modelo se realiza en el computador. La ESP32 env\'ia cada lectura al servidor Python y recibe una respuesta con la predicci\'on del modelo. Si la predicci\'on es $1$, el nodo la muestra como estado an\'omalo en la pantalla OLED. En una fase posterior, si el \'arbol de decisi\'on obtiene buen desempe\~no, sus reglas pueden traducirse directamente a condicionales en C++ para ejecutar la clasificaci\'on dentro de la ESP32 sin depender del computador.
