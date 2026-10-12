@@ -1,94 +1,98 @@
-# Atalaya: sistema de recomendaciones con IA
+# Atalaya: An AI-Based Recommendation System
 
-## Que hace el proyecto
+## What the Project Does
 
-Atalaya es un nodo ESP32 que mide temperatura, humedad, movimiento y luz. Envia cada lectura por medio de WiFi al computador. El computador usa una red neuronal para asignar una clase y devolver una recomendación concreta al OLED.
+Atalaya is an ESP32-based device that measures temperature, humidity, movement, and light. It sends each reading to a computer through Wi-Fi. The computer uses a neural network to classify the readings and send a specific recommendation back to the OLED display.
 
 ```text
-Sensores -> ESP32 -> WiFi -> servidor Python -> red neuronal -> clase y recomendacion -> OLED
+Sensors -> ESP32 -> Wi-Fi -> Python Server -> Neural Network -> Class and Recommendation -> OLED
 ```
 
-El PC y ESP32 deben estar en la misma red WiFi de 2.4 GHz.
+The computer and the ESP32 must be connected to the same 2.4 GHz Wi-Fi network.
 
-## Clases y recomendaciones
+## Classes and Recommendations
 
-| Clase | Recomendacion |
-|---|---|
-| NORMAL | Todo en orden. No se requiere accion. |
-| TEMP_ALTA_LEVE | Verificar ventilacion. |
-| TEMP_ALTA_CRITICA | Revisar el equipo de inmediato. |
-| MOVIMIENTO_LEVE | Verificar si el movimiento fue autorizado. |
-| MOVIMIENTO_CRITICO | Revisar posible presencia no autorizada. |
-| POCA_LUZ_LEVE | Monitorear la iluminacion. |
-| POCA_LUZ_CRITICA | Revisar iluminacion. |
+| Class              | Recommendation                                         |
+| ------------------ | ------------------------------------------------------ |
+| NORMAL             | Everything is working normally. No action is required. |
+| TEMP_ALTA_LEVE     | Check the ventilation.                                 |
+| TEMP_ALTA_CRITICA  | Check the equipment immediately.                       |
+| MOVIMIENTO_LEVE    | Check whether the movement was authorized.             |
+| MOVIMIENTO_CRITICO | Check for possible unauthorized presence.              |
+| POCA_LUZ_LEVE      | Monitor the lighting conditions.                       |
+| POCA_LUZ_CRITICA   | Check the lighting system.                             |
 
-Movimiento o poca luz son leves durante menos de cinco lecturas seguidas. Desde cinco lecturas continuas se consideran criticos.
+Movement and low-light events are classified as minor if they last for fewer than five consecutive readings. Starting from five consecutive readings, they are classified as critical.
 
-## La red neuronal y el perceptron
+## The Neural Network and the Perceptron
 
-La IA usada es una red neuronal tipo **MLP** (perceptron multicapa). Tiene:
+The AI model used in this project is a **Multilayer Perceptron (MLP)** neural network. It has:
 
-- Seis entradas: temperatura, humedad, PIR, luz, racha del PIR y racha de luz.
-- Dos capas ocultas: 16 neuronas y 8 neuronas.
-- Una salida multiclase: una de las siete clases anteriores.
-- Funcion de activacion ReLU en las capas ocultas.
-- Entrenamiento por epocas con el algoritmo Adam.
+* Six input features: temperature, humidity, PIR sensor readings, light level, consecutive PIR readings, and consecutive low-light readings.
+* Two hidden layers: one with 16 neurons and another with 8 neurons.
+* A multiclass output: one of the seven classes listed above.
+* The ReLU activation function in the hidden layers.
+* Training over multiple epochs using the Adam optimization algorithm.
 
-Un perceptron recibe valores, los multiplica por pesos aprendidos y produce una salida. La red conecta muchos perceptrones: las capas ocultas aprenden patrones como temperatura alta o movimiento sostenido. La ultima capa decide la clase con mayor probabilidad.
+A perceptron receives input values, multiplies them by learned weights, and produces an output. A neural network connects many perceptrons to learn patterns, such as high temperatures or continuous movement. The final layer selects the class with the highest predicted probability.
 
-La recomendacion : cada clase predicha tiene una recomendacion fija, verificable y adecuada al evento detectado.
+Each predicted class has a fixed recommendation. These recommendations are designed to be clear, verifiable, and appropriate for the detected event.
 
-## Evaluacion correcta
+## Proper Model Evaluation
 
-El dataset se divide de forma estratificada:
+The dataset is divided using stratified sampling:
 
-- 70% entrenamiento.
-- 15% validacion. Escoge la mejor epoca y compara modelos.
-- 15% prueba final. Mide el rendimiento una sola vez.
+* **70% for training:** The neural network learns from these data.
+* **15% for validation:** This set helps select the best training epoch and compare models.
+* **15% for final testing:** This set measures the model's performance only once after model selection.
 
-El reporte incluye Accuracy, Precision, Recall, F1 macro, matriz de confusion y la curva de perdida/exactitud. F1 macro es importante porque da el mismo peso a las clases poco frecuentes y a NORMAL.
+The evaluation report includes Accuracy, Precision, Recall, Macro F1-score, a confusion matrix, and learning curves for loss and accuracy.
 
-## Archivos principales
+The Macro F1-score is important because it gives equal weight to each class, including less frequent classes and the NORMAL class.
 
-- `firmware_esp32_ia/firmware_esp32_ia.ino`: firmware para cargar en la ESP32.
-- `firmware_esp32_ia/config_local.example.h`: plantilla para configurar WiFi y URL local sin subir claves.
-- `receiver.py`: servidor que recibe datos, calcula rachas y devuelve la recomendacion.
-- `recomendaciones.py`: clases, umbrales y textos de recomendacion.
-- `dataset/atalaya_lecturas.csv`: datos recolectados. No se sube a GitHub.
-- `dataset/ejemplo_lecturas.csv`: ejemplo seguro del formato del dataset.
-- `train_classifier.py`: entrenamiento y evaluacion de la red.
-- `modelos/atalaya_modelo.joblib`: se crea despues de entrenar la red neuronal.
-- `reportes/metricas_modelos.md`: se crea despues de entrenar y guarda los resultados.
-- `reportes/curva_aprendizaje_red.png`: se crea despues de entrenar y muestra perdida/exactitud.
-- `docs/cronograma_presupuesto_control.md`: cronograma, presupuesto y propuesta de control en Notion.
-- `docs/notion_tareas.csv`: tareas importables a Notion.
+## Main Project Files
 
-## Configurar WiFi 
+* `firmware_esp32_ia/firmware_esp32_ia.ino`: Firmware to upload to the ESP32.
+* `firmware_esp32_ia/config_local.example.h`: Template for configuring Wi-Fi and the local server URL without exposing credentials.
+* `receiver.py`: Server that receives sensor data, calculates consecutive readings, and returns recommendations.
+* `recomendaciones.py`: Contains the classes, thresholds, and recommendation messages.
+* `dataset/atalaya_lecturas.csv`: Collected data. This file is not uploaded to GitHub.
+* `dataset/ejemplo_lecturas.csv`: Safe example of the dataset format.
+* `train_classifier.py`: Script for training and evaluating the neural network.
+* `modelos/atalaya_modelo.joblib`: File created after training the neural network.
+* `reportes/metricas_modelos.md`: File created after training that stores the evaluation results.
+* `reportes/curva_aprendizaje_red.png`: File created after training that shows the loss and accuracy curves.
+* `docs/cronograma_presupuesto_control.md`: Project schedule, budget, and control proposal for Notion.
+* `docs/notion_tareas.csv`: Task list that can be imported into Notion.
 
-1. Copia `firmware_esp32_ia/config_local.example.h`.
-2. Renombra la copia como `firmware_esp32_ia/config_local.h`.
-3. Escribe tu SSID, password y URL del servidor local.
+## Wi-Fi Configuration
 
-`config_local.h` esta en `.gitignore`,
+1. Copy `firmware_esp32_ia/config_local.example.h`.
+2. Rename the copy to `firmware_esp32_ia/config_local.h`.
+3. Enter your Wi-Fi SSID, password, and local server URL.
 
-## Paso siguiente: preparar datos para las siete clases
+The `config_local.h` file is included in `.gitignore` to prevent your local credentials from being uploaded to GitHub.
 
-Los datos actuales aun no tienen suficientes ejemplos de `POCA_LUZ_LEVE` y `MOVIMIENTO_CRITICO`. Antes de capturar nuevos datos, guarda una copia manual del CSV si deseas conservar el experimento binario anterior.
+## Next Step: Preparing Data for the Seven Classes
 
-Luego ejecuta una vez:
+The current dataset does not yet contain enough examples of `POCA_LUZ_LEVE` and `MOVIMIENTO_CRITICO`.
+
+Before collecting new data, manually save a copy of the CSV file if you want to preserve the previous binary classification experiment.
+
+Then, run the following command once:
 
 ```powershell
 .\reiniciar_dataset.ps1
 ```
 
-Graba datos con estos patrones:
+Collect data using the following patterns:
 
-1. Normal: sensores sin eventos anormales.
-2. Temperatura: deja algunos segundos entre 36 y 39 C y otros por encima de 39 C.
-3. Movimiento: alterna gestos de 1 a 2 segundos y movimiento continuo de 5 a 10 segundos.
-4. Luz: alterna tapar el LDR 1 a 2 segundos y mantenerlo tapado 5 a 10 segundos.
+1. **Normal conditions:** Keep the sensors operating without abnormal events.
+2. **Temperature:** Allow the temperature to remain between 36 and 39 °C for a few seconds in some trials, and above 39 °C in others.
+3. **Movement:** Alternate between movements lasting 1–2 seconds and continuous movement lasting 5–10 seconds.
+4. **Light:** Cover the LDR sensor for 1–2 seconds in some trials, and keep it covered for 5–10 seconds in others.
 
-Usa los mismos comandos de siempre:
+Use the same commands as before:
 
 ```powershell
 .\grabar_normal.ps1
@@ -97,45 +101,53 @@ Usa los mismos comandos de siempre:
 .\grabar_anomalia_luz.ps1
 ```
 
-Revisa el balance antes de entrenar:
+Check the dataset balance before training:
 
 ```powershell
 .\leer_dataset.ps1
 ```
 
-Necesitas al menos seis ejemplos de cada clase presente. Es mejor registrar varias decenas de cada una.
+You need at least six examples for every class present in the dataset. However, collecting several dozen examples per class is recommended.
 
-## Por que puede salir `Sin modelo cargado`
+## Why the Message `Sin modelo cargado` May Appear
 
-Ese mensaje significa que el servidor recibe datos de la ESP32, pero todavia no tiene una red multiclase valida para predecir. Puede pasar por dos razones:
+This message means that the server is receiving data from the ESP32, but it does not have a valid multiclass neural network available to make predictions.
 
-- Aun no existe `modelos/atalaya_modelo.joblib`.
-- El archivo existe, pero es un modelo viejo binario de 0/1 y no sirve para las siete clases actuales.
+This can happen for two reasons:
 
-La solucion es completar los datos faltantes y entrenar de nuevo:
+* The file `modelos/atalaya_modelo.joblib` does not exist yet.
+* The file exists, but it contains an old binary model that classifies data as 0 or 1 and cannot be used for the current seven-class system.
+
+To solve this problem, collect the missing data and train the model again:
 
 ```powershell
 .\leer_dataset.ps1
 .\entrenar_modelo.ps1
 ```
 
-Cuando el entrenamiento termine bien, `prediccion_en_vivo.ps1` ya debe mostrar `clase=NORMAL`, `clase=MOVIMIENTO_CRITICO` u otra clase real.
+After successful training, `prediccion_en_vivo.ps1` should display a real class, such as `clase=NORMAL`, `clase=MOVIMIENTO_CRITICO`, or another valid class.
 
-## Entrenar y demostrar
+## Training and Demonstrating the System
+
+Run the following commands:
 
 ```powershell
 .\entrenar_modelo.ps1
 .\prediccion_en_vivo.ps1
 ```
 
-Despues de entrenar, vuelve a cargar `firmware_esp32_ia.ino` en Arduino IDE. En el monitor serial debe aparecer `clase_ia=` y una recomendacion. En el OLED aparecera la version corta.
+After training, upload `firmware_esp32_ia.ino` to the ESP32 again using the Arduino IDE.
 
-## Red de celular para la exposicion
+The serial monitor should display `clase_ia=` followed by the predicted class and a recommendation. The OLED display will show a shorter version of the recommendation.
 
-La ESP32 solo funciona con WiFi de 2.4 GHz. Conecta el PC y la ESP32 al mismo hotspot del celular. Luego ejecuta:
+## Using a Mobile Hotspot for the Presentation
+
+The ESP32 only supports 2.4 GHz Wi-Fi for this project. Connect both the computer and the ESP32 to the same mobile phone hotspot.
+
+Then, run:
 
 ```powershell
 .\diagnosticar_red.ps1
 ```
 
-Copia la URL mostrada en `SERVER_URL` dentro del firmware, vuelve a cargar la ESP32 y abre `prediccion_en_vivo.ps1`.
+Copy the URL displayed by the script into the `SERVER_URL` setting in the firmware. Upload the firmware to the ESP32 again, and open `prediccion_en_vivo.ps1` to test the system in real time.
