@@ -2,13 +2,13 @@
 
 ## Que hace el proyecto
 
-Atalaya es un nodo ESP32 que mide temperatura, humedad, movimiento y luz. Envia cada lectura por WiFi al computador. El computador usa una red neuronal para asignar una clase y devolver una recomendacion concreta al OLED.
+Atalaya es un nodo ESP32 que mide temperatura, humedad, movimiento y luz. Envia cada lectura por medio de WiFi al computador. El computador usa una red neuronal para asignar una clase y devolver una recomendación concreta al OLED.
 
 ```text
 Sensores -> ESP32 -> WiFi -> servidor Python -> red neuronal -> clase y recomendacion -> OLED
 ```
 
-No depende de internet: PC y ESP32 solo deben estar en la misma red WiFi de 2.4 GHz.
+El PC y ESP32 deben estar en la misma red WiFi de 2.4 GHz.
 
 ## Clases y recomendaciones
 
@@ -36,15 +36,15 @@ La IA usada es una red neuronal tipo **MLP** (perceptron multicapa). Tiene:
 
 Un perceptron recibe valores, los multiplica por pesos aprendidos y produce una salida. La red conecta muchos perceptrones: las capas ocultas aprenden patrones como temperatura alta o movimiento sostenido. La ultima capa decide la clase con mayor probabilidad.
 
-La recomendacion no se inventa libremente: cada clase predicha tiene una recomendacion fija, verificable y adecuada al evento detectado.
+La recomendacion : cada clase predicha tiene una recomendacion fija, verificable y adecuada al evento detectado.
 
 ## Evaluacion correcta
 
 El dataset se divide de forma estratificada:
 
-- 70% para entrenamiento.
-- 15% para validacion. Escoge la mejor epoca y compara modelos.
-- 15% para prueba final. Mide el rendimiento una sola vez.
+- 70% entrenamiento.
+- 15% validacion. Escoge la mejor epoca y compara modelos.
+- 15% prueba final. Mide el rendimiento una sola vez.
 
 El reporte incluye Accuracy, Precision, Recall, F1 macro, matriz de confusion y la curva de perdida/exactitud. F1 macro es importante porque da el mismo peso a las clases poco frecuentes y a NORMAL.
 
@@ -63,15 +63,13 @@ El reporte incluye Accuracy, Precision, Recall, F1 macro, matriz de confusion y 
 - `docs/cronograma_presupuesto_control.md`: cronograma, presupuesto y propuesta de control en Notion.
 - `docs/notion_tareas.csv`: tareas importables a Notion.
 
-## Configurar WiFi sin subir datos sensibles
-
-El firmware no incluye la clave real del WiFi. Para usarlo en tu computador:
+## Configurar WiFi 
 
 1. Copia `firmware_esp32_ia/config_local.example.h`.
 2. Renombra la copia como `firmware_esp32_ia/config_local.h`.
 3. Escribe tu SSID, password y URL del servidor local.
 
-`config_local.h` esta en `.gitignore`, por eso no se sube a GitHub.
+`config_local.h` esta en `.gitignore`,
 
 ## Paso siguiente: preparar datos para las siete clases
 
